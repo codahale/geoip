@@ -80,6 +80,23 @@ func BenchmarkLookup(b *testing.B) {
 	}
 }
 
+func BenchmarkLookupParallel(b *testing.B) {
+	g, err := Open(*dbFile, nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer g.Close()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			g.Lookup("24.24.24.24")
+		}
+	})
+}
+
 var (
 	dbFile = flag.String("db_file", "/usr/local/var/GeoIP/GeoIPCity.dat", "GeoIP database")
 )
