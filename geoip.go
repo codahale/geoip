@@ -3,7 +3,6 @@
 package geoip
 
 import (
-	"io"
 	"runtime"
 	"unsafe"
 )
@@ -69,18 +68,14 @@ type Record struct {
 	ContinentCode string  // ContinentCode is the location's continent.
 }
 
-// Database is a GeoIP database.
-type Database interface {
-	io.Closer
-
-	// Lookup returns a GeoIP Record for the given IP address. If libGeoIP is >
-	// 1.5.0, this is thread-safe.
-	Lookup(ip string) *Record
+// A Database is a GeoIP database.
+type Database struct {
+	g *C.GeoIP
 }
 
 // Open returns an open DB instance of the given .dat file. The result *must* be
 // closed, or memory will leak.
-func Open(filename string, opts *Options) (Database, error) {
+func Open(filename string, opts *Options) (*Database, error) {
 	if opts == nil {
 		opts = DefaultOptions
 	}
@@ -94,16 +89,14 @@ func Open(filename string, opts *Options) (Database, error) {
 	}
 	C.GeoIP_set_charset(g, C.GEOIP_CHARSET_UTF8)
 
-	db := &geoDB{g: g}
+	db := &Database{g: g}
 	runtime.SetFinalizer(g, db.Close)
 	return db, nil
 }
 
-type geoDB struct {
-	g *C.GeoIP
-}
-
-func (db geoDB) Lookup(ip string) *Record {
+// Lookup returns a GeoIP Record for the given IP address. If libGeoIP is >
+// 1.5.0, this is thread-safe.
+func (db Database) Lookup(ip string) *Record {
 	cs := C.CString(ip)
 	defer C.free(unsafe.Pointer(cs))
 
@@ -127,7 +120,8 @@ func (db geoDB) Lookup(ip string) *Record {
 	}
 }
 
-func (db *geoDB) Close() error {
+// Close releases the resources allocated by the database.
+func (db *Database) Close() error {
 	if db.g != nil {
 		C.GeoIP_delete(db.g)
 	}
