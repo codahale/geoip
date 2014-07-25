@@ -96,7 +96,7 @@ func Open(filename string, opts *Options) (*Database, error) {
 
 // Lookup returns a GeoIP Record for the given IP address. If libGeoIP is >
 // 1.5.0, this is thread-safe.
-func (db Database) Lookup(ip string) *Record {
+func (db *Database) Lookup(ip string) *Record {
 	cs := C.CString(ip)
 	defer C.free(unsafe.Pointer(cs))
 
