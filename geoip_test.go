@@ -65,6 +65,32 @@ func TestLookup(t *testing.T) {
 	}
 }
 
+func TestLookupNoLocks(t *testing.T) {
+	g, err := Open(*dbFile, &Options{NoLocks: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+
+	actual := g.Lookup("24.24.24.24")
+	expected := &Record{
+		CountryCode:   "US",
+		CountryCode3:  "USA",
+		CountryName:   "United States",
+		Region:        "NY",
+		City:          "Deer Park",
+		PostalCode:    "11729",
+		Latitude:      40.762699127197266,
+		Longitude:     -73.32270050048828,
+		AreaCode:      631,
+		ContinentCode: "NA",
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("Was %#v, but expected %#v", actual, expected)
+	}
+}
+
 func BenchmarkLookup(b *testing.B) {
 	g, err := Open(*dbFile, nil)
 	if err != nil {
