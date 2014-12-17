@@ -100,7 +100,9 @@ func Open(filename string, opts *Options) (*Database, error) {
 	}
 
 	db := &Database{g: g, m: m}
-	runtime.SetFinalizer(g, db.Close)
+	runtime.SetFinalizer(db, func(db *Database) {
+		_ = db.Close()
+	})
 	return db, nil
 }
 
